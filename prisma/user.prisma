@@ -1,0 +1,16 @@
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+  DRIVER
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique 
+  name         String   
+  password     String
+  photo        String?
+  createdAt    DateTime @default(now())
+  role         Role     @default(EDITOR)
+}

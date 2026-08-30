@@ -1,0 +1,8 @@
+model Product {
+  id          Int  @id @default(autoincrement())
+  name        String @unique @db.VarChar(12)
+  price       Float
+  desc        String
+  lowStockThreshold Int @default(10)
+  requiresApproval Boolean @default(false)
+}
