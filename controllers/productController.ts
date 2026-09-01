@@ -60,6 +60,16 @@ export const updateProduct = catchAsync(async (req: Request, res: Response, next
   res.status(200).json(updatedProduct);
 });
 
+export const paramValidate = (req: Request, res: Response, next: NextFunction) => {
+  console.log(req.params, "res");
+
+  if (!req.params?.id) {
+    return next(new AppError("Please provide a valid id!", 400));
+  }
+
+  next();
+};
+
 export const deleteProduct = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
   const deletedProduct = await prisma.product.delete({
@@ -69,5 +79,7 @@ export const deleteProduct = catchAsync(async (req: Request, res: Response, next
   if (!deletedProduct) {
     return next(new AppError(`Product with ID ${id} not found`, 404));
   }
-  res.status(200).json(deletedProduct);
+  res
+    .status(200)
+    .json({ status: "success", message: "Product successfully deleted!", product: deletedProduct });
 });

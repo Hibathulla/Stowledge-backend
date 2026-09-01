@@ -1,6 +1,5 @@
 enum Role {
   ADMIN
-  EDITOR
   VIEWER
   DRIVER
 }
@@ -12,5 +11,7 @@ model User {
   password     String
   photo        String?
   createdAt    DateTime @default(now())
-  role         Role     @default(EDITOR)
+  role         Role     @default(VIEWER)
+  passwordResetToken String?
+  passwordResetExpires DateTime?
 }

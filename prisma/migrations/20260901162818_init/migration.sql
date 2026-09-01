@@ -1,13 +1,13 @@
 -- CreateEnum
-CREATE TYPE "Role" AS ENUM ('ADMIN', 'EDITOR', 'VIEWER', 'DRIVER');
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'VIEWER', 'DRIVER');
 
 -- CreateTable
 CREATE TABLE "Product" (
     "id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
+    "name" VARCHAR(12) NOT NULL,
     "price" DOUBLE PRECISION NOT NULL,
-    "desc" TEXT,
-    "lowStockThreshold" INTEGER NOT NULL DEFAULT 0,
+    "desc" TEXT NOT NULL,
+    "lowStockThreshold" INTEGER NOT NULL DEFAULT 10,
     "requiresApproval" BOOLEAN NOT NULL DEFAULT false,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
@@ -17,10 +17,13 @@ CREATE TABLE "Product" (
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
-    "name" TEXT,
-    "passwordHash" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "photo" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "role" "Role" NOT NULL DEFAULT 'EDITOR',
+    "role" "Role" NOT NULL DEFAULT 'VIEWER',
+    "passwordResetToken" TEXT,
+    "passwordResetExpires" TIMESTAMP(3),
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
