@@ -8,6 +8,7 @@ declare global {
         photo?: string | null;
         role?: string;
         createdAt?: Date;
+        password?: string;
       };
     }
   }

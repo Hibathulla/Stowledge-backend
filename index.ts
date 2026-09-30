@@ -6,10 +6,17 @@ import productRoutes from "./routes/productRoutes";
 import { API_PREFIX, API_URLS } from "./constants/apiUrls";
 import { AppError } from "./utils/appError";
 import { globalErrorHandler } from "./controllers/errorController";
+import { rateLimit } from "express-rate-limit";
+import helmet from "helmet";
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: "10kb" })); // Body parser, reading data from body into req.body
+
+// Set security HTTP headers
+app.use(helmet());
+
+// Development logging
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
 }
@@ -19,6 +26,17 @@ process.on("uncaughtException", (err) => {
   console.error(err.name, err.message);
   process.exit(1);
 });
+
+// rate limiting middleware
+const limiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 15 minutes
+  message: "Too many requests from this IP, please try again after an hour",
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+app.use("/api", limiter); // Apply the rate limiting middleware to all requests
 
 // Routes
 app.use(`${API_PREFIX}${API_URLS.USERS}`, userRoutes);

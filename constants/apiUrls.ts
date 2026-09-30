@@ -5,6 +5,9 @@ export const API_URLS = {
   USERS: "/users",
   SIGNUP: "/signup",
   LOGIN: "/login",
+  DELETE_ME: "/deleteMe",
   FORGOT_PASSWORD: "/forgotPassword",
   RESET_PASSWORD: "/resetPassword",
+  UPDATE_PASSWORD: "/updatePassword",
+  UPDATE_ME: "/updateMe",
 };

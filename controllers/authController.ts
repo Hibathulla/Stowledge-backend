@@ -8,14 +8,45 @@ import { verifyJWT } from "../utils/verifyJWT";
 import { Role } from "../generated/prisma/enums";
 import { createPasswordResetToken } from "../utils/createPasswordResetToken";
 import { sendEmail } from "../utils/email";
+import { hashPassword } from "../utils/hashPassword";
+
+function createJWTAndSendResponse(
+  user: any,
+  statusCode: number,
+  res: Response,
+  next: NextFunction
+) {
+  const accessToken = createJWT(user.id, next);
+
+  if (!accessToken) {
+    return;
+  }
+
+  const { password: _, ...safeUser } = user;
+
+  res.cookie("jwt", accessToken, {
+    httpOnly: true,
+    expires: new Date(
+      Date.now() + parseInt(process.env.JWT_COOKIE_EXPIRES_IN as string) * 24 * 60 * 60 * 1000
+    ), // Convert JWT_COOKIE_EXPIRES_IN to milliseconds
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  res.status(statusCode).json({
+    status: "success",
+    accessToken,
+    data: {
+      user: safeUser,
+    },
+  });
+}
 
 export const signup = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   const { email, password, name, role } = req.body;
 
-  const hashedPassword = await Bun.password.hash(password, {
-    algorithm: "bcrypt",
-    cost: 12,
-  });
+  const hashedPassword = await hashPassword(password);
+
   const createUser = await prisma.user.create({
     data: {
       email,
@@ -26,19 +57,7 @@ export const signup = catchAsync(async (req: Request, res: Response, next: NextF
   });
 
   if (createUser) {
-    const accessToken = createJWT(createUser.id, next);
-
-    if (!accessToken) {
-      return;
-    }
-
-    res.status(201).json({
-      status: "success",
-      accessToken,
-      data: {
-        user: createUser,
-      },
-    });
+    createJWTAndSendResponse(createUser, 201, res, next);
   }
 });
 
@@ -53,21 +72,7 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
     return next(new AppError("Invalid email or password", 401));
   }
 
-  const accessToken = createJWT(user?.id, next);
-
-  if (!accessToken) {
-    return;
-  }
-
-  const { password: _, ...safeUser } = user;
-
-  res.status(200).json({
-    status: "success",
-    accessToken,
-    data: {
-      user: safeUser,
-    },
-  });
+  createJWTAndSendResponse(user, 200, res, next);
 });
 
 export const protectRoute = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -82,8 +87,6 @@ export const protectRoute = catchAsync(async (req: Request, res: Response, next:
 
   //2) verify jwt
   const decoded = verifyJWT(token);
-
-  console.log(decoded, "decoded");
 
   //3) verify user really exists. what if user change password after login?
   const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });
@@ -122,11 +125,19 @@ export const forgotPassword = catchAsync(
       return next(new AppError("No user found with this email!", 404));
     }
 
-    //2) Generate random reset token
-    const resetToken = await createPasswordResetToken(user?.id);
+    //2) Generate random reset token and update the passwordResetToken in DB
+    const { resetTokenHash, resetToken, expiresAt } = await createPasswordResetToken();
+
+    await prisma.user.update({
+      where: { id: user?.id },
+      data: {
+        passwordResetToken: resetToken,
+        passwordResetExpires: expiresAt,
+      },
+    });
 
     //3) Send the token to user email
-    const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetToken}`;
+    const resetUrl = `${req.protocol}://${req.get("host")}/api/v1/users/resetPassword/${resetTokenHash}`;
     const message = `Reset your password at ${resetUrl}`;
 
     try {
@@ -162,4 +173,55 @@ export const forgotPassword = catchAsync(
   }
 );
 
-export const resetPassword = (req: Request, res: Response, next: NextFunction) => {};
+export const resetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+  //1) Get user based on token
+  const { resetToken, expiresAt } = await createPasswordResetToken(
+    req?.params?.resetToken as string
+  );
+
+  //2) if token has not expired, and there is user get the user
+  const user = await prisma.user.findUnique({
+    where: {
+      passwordResetToken: resetToken,
+      passwordResetExpires: {
+        gte: new Date(),
+      },
+    },
+  });
+
+  if (!user) {
+    return next(new AppError("Token is invalid or has expired", 400));
+  }
+
+  //3) Update changed Password property for the user
+  const updatedUser = await prisma.user.update({
+    where: { id: user?.id },
+    data: {
+      password: await hashPassword(req.body.password),
+      passwordResetToken: null,
+      passwordResetExpires: null,
+    },
+  });
+  //4) Log the user in, send JWT
+  createJWTAndSendResponse(updatedUser, 200, res, next);
+});
+
+export const updatePassword = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    // 2) Check if POSTed current password is correct
+    if (!(await comparePassword(req.body.currentPassword, req?.user!.password as string))) {
+      return next(new AppError("Your current password is wrong.", 401));
+    }
+
+    //3) If so, update password
+    const updatedUser = await prisma.user.update({
+      where: { id: req?.user?.id },
+      data: {
+        password: await hashPassword(req.body.password),
+      },
+    });
+
+    //4) Log user in, send JWT
+    createJWTAndSendResponse(updatedUser, 200, res, next);
+  }
+);

@@ -12,6 +12,7 @@ model User {
   photo        String?
   createdAt    DateTime @default(now())
   role         Role     @default(VIEWER)
-  passwordResetToken String?
+  active      Boolean  @default(true)
+  passwordResetToken String?  @unique
   passwordResetExpires DateTime?
 }
