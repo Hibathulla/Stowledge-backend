@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { catchAsync } from "../utils/catchAsync";
 import { AppError } from "../utils/appError";
+import { getCurrentStock } from "../utils/getCurrentStock";
 
 export const getProducts = catchAsync(async (req: Request, res: Response) => {
   const products = await prisma.product.findMany();
@@ -22,6 +23,16 @@ export const getAllProducts = catchAsync(async (req: Request, res: Response) => 
     take: limit ? parseInt(limit as string, 10) : 10, // Default limit to 10 if not provided,
     cursor: cursor ? { id: parseInt(cursor as string, 10) } : undefined,
     skip: cursor ? 1 : 0, // Skip the cursor item if cursor is provided
+    select: {
+      id: true,
+      name: true,
+      desc: true,
+      lowStockThreshold: true,
+      requiresApproval: true,
+      approvalThreshold: true,
+      createdAt: true,
+      stockMovements: true,
+    },
   });
 
   res.status(200).json({
@@ -83,3 +94,25 @@ export const deleteProduct = catchAsync(async (req: Request, res: Response, next
     .status(200)
     .json({ status: "success", message: "Product successfully deleted!", product: deletedProduct });
 });
+
+export const getTotalStockForProduct = catchAsync(
+  async (req: Request, res: Response, next: Function) => {
+    const { productId } = req.params;
+
+    const product = await prisma.product.findUnique({ where: { id: Number(productId) } });
+
+    if (!product) {
+      return next(new AppError("Product not found", 404));
+    }
+
+    const totalStock = await getCurrentStock(Number(productId));
+
+    return res.status(200).json({
+      status: "success",
+      data: {
+        totalStock,
+        product,
+      },
+    });
+  }
+);

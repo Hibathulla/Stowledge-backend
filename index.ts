@@ -3,15 +3,15 @@ import express from "express";
 import morgan from "morgan";
 import userRoutes from "./routes/userRoutes";
 import productRoutes from "./routes/productRoutes";
+import stockMovementRoutes from "./routes/stockMovementRoutes";
 import { API_PREFIX, API_URLS } from "./constants/apiUrls";
 import { AppError } from "./utils/appError";
 import { globalErrorHandler } from "./controllers/errorController";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
+import hpp from "hpp";
 
 const app = express();
-
-app.use(express.json({ limit: "10kb" })); // Body parser, reading data from body into req.body
 
 // Set security HTTP headers
 app.use(helmet());
@@ -38,9 +38,15 @@ const limiter = rateLimit({
 
 app.use("/api", limiter); // Apply the rate limiting middleware to all requests
 
+app.use(express.json({ limit: "10kb" })); // Body parser, reading data from body into req.body
+
+//Prevent Parameter pollution
+app.use(hpp());
+
 // Routes
 app.use(`${API_PREFIX}${API_URLS.USERS}`, userRoutes);
 app.use(`${API_PREFIX}${API_URLS.PRODUCTS}`, productRoutes);
+app.use(`${API_PREFIX}${API_URLS.STOCK_MOVEMENTS}`, stockMovementRoutes);
 
 // Undefined route handler. Always keep this at the bottom of all routes.
 app.use((req, res, next) => {
@@ -57,42 +63,3 @@ process.on("unhandledRejection", (err) => {
 });
 
 export { app };
-
-// async function main() {
-//   // Create a new user with a post
-//   const user = await prisma.user.create({
-//     data: {
-//       name: "Alice",
-//       email: "alice@prisma.io",
-//       posts: {
-//         create: {
-//           title: "Hello World",
-//           content: "This is my first post!",
-//           published: true,
-//         },
-//       },
-//     },
-//     include: {
-//       posts: true,
-//     },
-//   });
-//   console.log("Created user:", user);
-
-//   // Fetch all users with their posts
-//   const allUsers = await prisma.user.findMany({
-//     include: {
-//       posts: true,
-//     },
-//   });
-//   console.log("All users:", JSON.stringify(allUsers, null, 2));
-// }
-
-// main()
-//   .then(async () => {
-//     await prisma.$disconnect();
-//   })
-//   .catch(async (e) => {
-//     console.error(e);
-//     await prisma.$disconnect();
-//     process.exit(1);
-//   });

@@ -7,7 +7,7 @@ import {
   signup,
   updatePassword,
 } from "../controllers/authController";
-import { deleteMe, getAllUsers, updateMe } from "../controllers/userController";
+import { deleteMe, getAllUsers, getMe, updateMe } from "../controllers/userController";
 import { loginValidator } from "../validators/loginValidator";
 import { signupValidator } from "../validators/signupValidator";
 import { validateRequest } from "../validators/validateRequest";
@@ -45,5 +45,6 @@ router.patch(API_URLS.UPDATE_ME, validateRequest(updateMeValidator), updateMe);
 router.delete(API_URLS.DELETE_ME, deleteMe);
 
 router.get("/", getAllUsers);
+router.get(API_URLS.GET_ME, getMe);
 
 export default router;

@@ -5,6 +5,7 @@ import {
   deleteProduct,
   getAllProducts,
   getProductById,
+  getTotalStockForProduct,
   paramValidate,
 } from "../controllers/productController";
 import { Role } from "../generated/prisma/enums";
@@ -22,5 +23,7 @@ router
   .post(restrictRoute(Role.ADMIN), validateRequest(createProductValidator), createProduct);
 router.param("id", paramValidate);
 router.route("/:id").delete(restrictRoute(Role.ADMIN), deleteProduct).get(getProductById);
+
+router.route("/stock/:productId").get(restrictRoute(Role.ADMIN), getTotalStockForProduct);
 
 export default router;

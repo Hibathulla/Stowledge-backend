@@ -5,4 +5,7 @@ model Product {
   desc        String
   lowStockThreshold Int @default(10)
   requiresApproval Boolean @default(false)
+  createdAt   DateTime @default(now())
+  approvalThreshold Int @default(40)
+  stockMovements StockMovement[]
 }

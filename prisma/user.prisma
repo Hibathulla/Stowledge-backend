@@ -15,4 +15,6 @@ model User {
   active      Boolean  @default(true)
   passwordResetToken String?  @unique
   passwordResetExpires DateTime?
+  assignedStockMovements StockMovement[]
+  approvedByStockMovements StockMovement[] @relation("ApprovedStockMovements")
 }
