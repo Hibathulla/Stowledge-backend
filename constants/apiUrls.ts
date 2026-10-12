@@ -3,7 +3,9 @@ export const API_PREFIX = "/api/v1";
 export const API_URLS = {
   BASE: "/",
   PRODUCTS: "/products",
+  REFRESH: "/refresh",
   USERS: "/users",
+  AUTH: "/auth",
   SIGNUP: "/signup",
   LOGIN: "/login",
   DELETE_ME: "/deleteMe",

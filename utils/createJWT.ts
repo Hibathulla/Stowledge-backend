@@ -2,7 +2,11 @@ import type { NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { AppError } from "./appError";
 
-export const createJWT = (id: number, next: NextFunction): string | undefined => {
+export const createJWT = (
+  id: number,
+  next: NextFunction,
+  type: "access" | "refresh"
+): string | undefined => {
   const secret = process.env.JWT_SECRET;
 
   if (!secret) {
@@ -10,7 +14,7 @@ export const createJWT = (id: number, next: NextFunction): string | undefined =>
     return;
   }
 
-  return jwt.sign({ id }, secret, {
-    expiresIn: "90d",
+  return jwt.sign({ id, tokenType: type }, secret, {
+    expiresIn: type === "access" ? "2m" : "10m",
   });
 };

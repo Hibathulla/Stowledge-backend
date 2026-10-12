@@ -16,15 +16,16 @@ function createJWTAndSendResponse(
   res: Response,
   next: NextFunction
 ) {
-  const accessToken = createJWT(user.id, next);
+  const accessToken = createJWT(user.id, next, "access");
+  const refreshToken = createJWT(user.id, next, "refresh");
 
-  if (!accessToken) {
+  if (!accessToken || !refreshToken) {
     return;
   }
 
   const { password: _, ...safeUser } = user;
 
-  res.cookie("jwt", accessToken, {
+  res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     expires: new Date(
       Date.now() + parseInt(process.env.JWT_COOKIE_EXPIRES_IN as string) * 24 * 60 * 60 * 1000
@@ -75,6 +76,30 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
   createJWTAndSendResponse(user, 200, res, next);
 });
 
+export const handleRefreshToken = catchAsync(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      return next(new AppError("No refresh token provided", 401));
+    }
+
+    const decoded = verifyJWT(refreshToken, "refresh");
+
+    if (!decoded) {
+      return next(new AppError("Invalid refresh token", 401));
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: decoded.id } });
+
+    if (!user) {
+      return next(new AppError("User no longer exists", 401));
+    }
+
+    createJWTAndSendResponse(user, 200, res, next);
+  }
+);
+
 export const protectRoute = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
   let token;
   if (req.headers?.authorization && req?.headers?.authorization?.startsWith("Bearer")) {
@@ -86,7 +111,7 @@ export const protectRoute = catchAsync(async (req: Request, res: Response, next:
   }
 
   //2) verify jwt
-  const decoded = verifyJWT(token);
+  const decoded = verifyJWT(token, "access");
 
   //3) verify user really exists. what if user change password after login?
   const currentUser = await prisma.user.findUnique({ where: { id: decoded.id } });

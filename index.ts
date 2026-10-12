@@ -10,6 +10,8 @@ import { globalErrorHandler } from "./controllers/errorController";
 import { rateLimit } from "express-rate-limit";
 import helmet from "helmet";
 import hpp from "hpp";
+import authRoutes from "./routes/authRoutes";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
@@ -39,11 +41,13 @@ const limiter = rateLimit({
 app.use("/api", limiter); // Apply the rate limiting middleware to all requests
 
 app.use(express.json({ limit: "10kb" })); // Body parser, reading data from body into req.body
+app.use(cookieParser());
 
 //Prevent Parameter pollution
 app.use(hpp());
 
 // Routes
+app.use(`${API_PREFIX}${API_URLS.AUTH}`, authRoutes);
 app.use(`${API_PREFIX}${API_URLS.USERS}`, userRoutes);
 app.use(`${API_PREFIX}${API_URLS.PRODUCTS}`, productRoutes);
 app.use(`${API_PREFIX}${API_URLS.STOCK_MOVEMENTS}`, stockMovementRoutes);
