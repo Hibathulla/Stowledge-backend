@@ -13,11 +13,11 @@ This repository is the **Express + TypeScript API**. The Next.js dashboard lives
 ## Features
 
 - **Immutable stock ledger** — inventory changes are stored as movements, never as edits to a counter
-- **Derived stock levels** — current stock is computed from approved movements, so there is no second number that can drift out of sync
+- **Derived stock levels** — the app adds up every approved movement to get the current stock, instead of saving a number that someone has to keep updating, so the count can’t go out of date
 - **Approval workflow** — movements are routed to an Admin when a product is flagged as always-approve, or when the quantity exceeds that product's approval threshold
 - **Stock validation** — an OUTWARD movement is rejected if it asks for more than is currently in stock
 - **Driver delivery flow** — drivers claim approved OUTWARD movements, then mark them `DELIVERED` or `FAILED`
-- **Role-based access control** — Admin, Editor, Viewer and Driver roles enforced on the server
+- **Role-based access control** — Admin, Viewer and Driver roles enforced on the server
 
 ---
 
