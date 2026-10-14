@@ -5,7 +5,7 @@ Waredock is a role-based warehouse management system built around an **append-on
 This repository is the **Express + TypeScript API**. The Next.js dashboard lives in a separate repo.
 
 - **Frontend repo:** `<link to waredock-frontend>`
-- **Live API:** `[<deployed backend URL>](https://stowledge-backend.onrender.com)`
+- **Live API:** `https://stowledge-backend.onrender.com`
 - **Live demo:** `<deployed frontend URL>`
 
 ---
