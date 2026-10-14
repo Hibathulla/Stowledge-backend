@@ -122,8 +122,6 @@ npm run dev
 - [ ] Low-stock alerts on the dashboard using `lowStockThreshold`
 - [ ] Analytics and reporting (inward vs outward volume, approval turnaround)
 - [ ] Offline-first driver view with queued status updates
-- [ ] Zones and racks for locating stock inside the warehouse
-- [ ] Automated tests for the approval and stock-validation flows
 
 ---
 
